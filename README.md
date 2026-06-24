@@ -1,52 +1,76 @@
-# 飞书工作语言润色器
+# The Art of PM Language 🎯
 
-产品经理专属的职场表达润色工具，支持多种语境（对领导/同事/业务方/开发/测试/直白）。
+> 产品经理的职场语言润色器 — 飞书插件
 
-## 部署步骤（Vercel，免费）
+一句话变得体，对谁说什么话，一键搞定。
 
-### 第一步：推送代码到 GitHub
+## 它能做什么
 
-1. 在 GitHub 创建新仓库（如 `feishu-polish-plugin`）
-2. 在本地项目目录执行：
+把你想说的话，润色成适合不同对象的表达：
 
-```bash
-git init
-git add .
-git commit -m "init: 飞书工作语言润色器"
-git remote add origin https://github.com/你的用户名/feishu-polish-plugin.git
-git branch -M main
-git push -u origin main
-```
+| 语境 | 效果 |
+|------|------|
+| 对领导说 | 恭敬、专业、有汇报感 |
+| 对同事说 | 友好、平等、协作感 |
+| 对业务方说 | 耐心、有服务意识、不讲技术 |
+| 对开发说 | 清晰、精确、有条理 |
+| 对测试说 | 详细、注重逻辑和边界 |
+| 直白地说 | 去掉客套，直击要点 |
 
-### 第二步：部署到 Vercel
+## 示例
 
-1. 打开 https://vercel.com ，用 GitHub 账号登录
-2. 点击 "New Project" → 导入你的 `feishu-polish-plugin` 仓库
-3. 在部署设置中添加环境变量：
-   - `FEISHU_APP_ID` = `cli_aab24dc745b99bb5`
-   - `FEISHU_APP_SECRET` = `8tvomPlrkaKISrSes8aTeeGsezY1EkoN`
-   - `AI_URL` = `https://open.bigmodel.cn/api/paas/v4`
-   - `AI_KEY` = `70fcf4d493464c86a4426323b9fd9c39.vuTEEqoUXobAtBUs`
-   - `AI_MODEL` = `GLM-4.7-Flash`
-4. 点击 Deploy，等待部署完成
-5. 部署完成后会得到一个域名，如 `feishu-polish-plugin.vercel.app`
+**输入：** 这个需求做不了，时间太紧了，你们能不能别老改需求
 
-### 第三步：配置飞书应用
+**对领导说：** 鉴于时间紧迫，目前该需求确实难以按时交付。另外，频繁的需求变更会严重挤压开发周期，建议后续加强需求评审，避免影响整体进度。
+
+**直白地说：** 做不了，时间不够，别再改需求了。
+
+## 功能特性
+
+- ✅ 6 种语境一键切换
+- ✅ 支持补充润色说明（如"语气再委婉一些"）
+- ✅ 一键复制结果
+- ✅ 替换原文、重新润色
+- ✅ 飞书聊天框"+"菜单直接打开
+- ✅ 消息快捷操作（选中消息直接润色）
+
+## 部署指南
+
+### 第一步：部署到 Vercel（免费）
+
+1. 打开 [vercel.com](https://vercel.com)，用 GitHub 账号登录
+2. 点 **New Project** → 导入本仓库
+3. 添加环境变量：
+
+| 变量名 | 值 |
+|--------|-----|
+| `AI_URL` | 你的AI接口地址 |
+| `AI_KEY` | 你的AI密钥 |
+| `AI_MODEL` | 模型名称 |
+| `FEISHU_APP_ID` | 飞书应用ID |
+| `FEISHU_APP_SECRET` | 飞书应用Secret |
+
+4. 点 **Deploy**，完成后获得域名（如 `xxx.vercel.app`）
+
+### 第二步：配置飞书应用
 
 1. 打开 [飞书开放平台](https://open.feishu.cn/app)，进入你的应用
-2. **配置事件回调地址**：
-   - 进入 "事件与回调" → "事件配置"
-   - 请求地址填：`https://你的vercel域名/api/feishu-event`
-3. **配置聊天框"+"菜单**：
-   - 进入 "应用功能" → "机器人" 或 "小程序"
-   - 添加"网页链接"类型菜单项
-   - 链接填：`https://你的vercel域名/`
+
+2. **事件回调地址：**
+   - 事件与回调 → 事件配置
+   - 请求地址：`https://你的域名/api/feishu-event`
+
+3. **聊天框"+"菜单：**
+   - 应用功能 → 添加网页链接菜单项
+   - 链接：`https://你的域名/`
    - 名称：工作语言润色器
-4. **配置消息快捷操作**：
-   - 进入 "应用功能" → "消息快捷操作"
-   - 添加快捷操作，类型选"打开链接"
-   - 链接填：`https://你的vercel域名/?text={content}`
-5. 发布应用版本，申请上线
+
+4. **消息快捷操作：**
+   - 应用功能 → 消息快捷操作
+   - 类型：打开链接
+   - 链接：`https://你的域名/?text={content}`
+
+5. 发布应用版本
 
 ## 本地开发
 
@@ -59,15 +83,20 @@ npm run dev
 ## 项目结构
 
 ```
-feishu-polish-plugin/
 ├── api/
-│   ├── _utils.js          # 工具函数（AI调用、飞书token）
+│   ├── _utils.js          # AI调用、飞书鉴权
 │   ├── polish.js          # 润色接口
 │   ├── feishu-event.js    # 飞书事件回调
 │   └── server.js          # 本地开发服务器
 ├── public/
-│   └── index.html         # 前端页面
-├── package.json
+│   └── index.html         # 前端界面
 ├── vercel.json            # Vercel部署配置
-└── README.md
+└── package.json
 ```
+
+## 技术栈
+
+- 前端：原生 HTML/CSS/JS（无框架，轻量）
+- 后端：Node.js（Vercel Serverless Functions）
+- AI：智谱 GLM-4（兼容 OpenAI 接口格式）
+- 部署：Vercel（免费）
