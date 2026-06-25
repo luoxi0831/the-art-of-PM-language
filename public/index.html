@@ -419,11 +419,10 @@
           return;
         }
 
-        resultText.innerHTML = '';
-        resultText.textContent = '';
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let firstChunk = true;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -441,6 +440,11 @@
                 const parsed = JSON.parse(data);
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
+                  if (firstChunk) {
+                    resultText.innerHTML = '';
+                    resultText.textContent = '';
+                    firstChunk = false;
+                  }
                   resultText.textContent += content;
                 }
               } catch (e) {}
