@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>工作语言润色器</title>
-  <script type="text/javascript" src="https://lf-cdn.bytescm.com/obj/static/jssdk/js_sdk/lark-js-sdk-1.5.16.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -316,7 +315,6 @@
     const AI_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
     const AI_KEY = '70fcf4d493464c86a4426323b9fd9c39.vuTEEqoUXobAtBUs';
     const AI_MODEL = 'glm-4.7-flash';
-    const FEISHU_APP_ID = 'cli_aab24dc745b99bb5';
     let selectedTone = '';
 
     const toneMap = {
@@ -403,8 +401,8 @@
           });
 
           if (!res.ok) {
-            if (attempt < 2) { await sleep(500); continue; }
-            showToast('润色失败，请重试');
+            if (attempt < 2) { await sleep(1000); continue; }
+            showToast('润色失败(code:' + res.status + ')，请重试');
             resultSection.classList.remove('show');
             break;
           }
@@ -444,7 +442,7 @@
           success = true;
           break;
         } catch (err) {
-          if (attempt < 2) { await sleep(500); continue; }
+          if (attempt < 2) { await sleep(1000); continue; }
           showToast('网络错误，请重试');
           resultSection.classList.remove('show');
         }
