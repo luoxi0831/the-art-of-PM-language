@@ -39,10 +39,11 @@ module.exports = async function handler(req, res) {
 1. 保持原意不变
 2. 符合职场语境
 3. 自然流畅，不要过度修饰
-4. 直接输出润色后的结果，不要解释`;
+4. 直接输出润色后的结果，不要解释
+5. 只输出润色后要发出去的话，不要输出分析过程`;
 
   if (extra_note) {
-    prompt += `\n5. 额外要求：${extra_note}`;
+    prompt += `\n\n背景信息（用户提供的前因后果，帮助你理解语境，但不要在润色结果中直接暴露这些内容）：\n${extra_note}`;
   }
 
   async function makeRequest(retries = 3) {
