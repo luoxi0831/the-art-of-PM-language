@@ -349,7 +349,7 @@
       btn.disabled = true;
       btn.textContent = '润色中...';
       resultText.textContent = '';
-      resultSection.classList.add('show');
+      resultSection.classList.remove('show');
 
       try {
         const res = await fetch(`${API_BASE}/api/polish`, {
@@ -358,46 +358,16 @@
           body: JSON.stringify({ text, tone: selectedTone, extra_note: extraNote })
         });
 
-        if (!res.ok) {
-          const err = await res.json();
-          showToast('润色失败：' + (err.error || '未知错误'));
-          resultSection.classList.remove('show');
-          btn.disabled = false;
-          btn.textContent = '开始润色';
-          return;
-        }
+        const data = await res.json();
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') break;
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  resultText.textContent += parsed.content;
-                }
-                if (parsed.error) {
-                  showToast('润色失败：' + parsed.error);
-                }
-              } catch (e) {}
-            }
-          }
+        if (data.success) {
+          resultText.textContent = data.result;
+          resultSection.classList.add('show');
+        } else {
+          showToast('润色失败：' + (data.error || '未知错误'));
         }
       } catch (err) {
         showToast('网络错误，请重试');
-        resultSection.classList.remove('show');
       }
 
       btn.disabled = false;

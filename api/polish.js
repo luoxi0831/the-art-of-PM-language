@@ -1,6 +1,4 @@
-export const config = {
-  runtime: 'edge',
-};
+const axios = require('axios');
 
 const AI_URL = process.env.AI_URL || 'https://open.bigmodel.cn/api/paas/v4';
 const AI_KEY = process.env.AI_KEY || '70fcf4d493464c86a4426323b9fd9c39.vuTEEqoUXobAtBUs';
@@ -15,25 +13,23 @@ const toneMap = {
   'direct': '直白地说（去掉所有客套话，直接表达核心意思）'
 };
 
-export default async function handler(req) {
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      }
-    });
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { text, tone, extra_note } = await req.json();
+  const { text, tone, extra_note } = req.body;
 
   if (!text || !tone) {
-    return new Response(JSON.stringify({ error: 'Missing text or tone' }), { status: 400 });
+    return res.status(400).json({ error: 'Missing text or tone' });
   }
 
   const toneDesc = toneMap[tone] || toneMap['colleague'];
@@ -51,79 +47,23 @@ export default async function handler(req) {
   }
 
   try {
-    const response = await fetch(`${AI_URL}/chat/completions`, {
-      method: 'POST',
+    const response = await axios.post(`${AI_URL}/chat/completions`, {
+      model: AI_MODEL,
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: text }
+      ]
+    }, {
       headers: {
         'Authorization': `Bearer ${AI_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        stream: true,
-        messages: [
-          { role: 'system', content: prompt },
-          { role: 'user', content: text }
-        ]
-      })
+      timeout: 30000
     });
 
-    if (!response.ok) {
-      return new Response(JSON.stringify({ error: 'AI service error', detail: `Status ${response.status}` }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-            controller.close();
-            break;
-          }
-
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter(line => line.trim());
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') {
-                controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-                controller.close();
-                return;
-              }
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content;
-                if (content) {
-                  controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ content })}\n\n`));
-                }
-              } catch (e) {}
-            }
-          }
-        }
-      }
-    });
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-      }
-    });
-
+    const result = response.data.choices[0].message.content;
+    return res.status(200).json({ success: true, result });
   } catch (err) {
-    return new Response(JSON.stringify({ error: 'AI service error', detail: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: 'AI service error', detail: err.message });
   }
-}
+};
