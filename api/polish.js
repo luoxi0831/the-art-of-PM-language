@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
     prompt += `\n\n背景信息（用户提供的前因后果，帮助你理解语境，但不要在润色结果中直接暴露这些内容）：\n${extra_note}`;
   }
 
-  async function makeRequest(retries = 3) {
+  async function makeRequest(retries = 2) {
     for (let i = 0; i < retries; i++) {
       try {
         return await axios.post(`${AI_URL}/chat/completions`, {
@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
         });
       } catch (err) {
         if (err.response && err.response.status === 429 && i < retries - 1) {
-          await new Promise(r => setTimeout(r, (i + 1) * 2000));
+          await new Promise(r => setTimeout(r, 1000));
           continue;
         }
         throw err;
@@ -78,6 +78,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
 
     const response = await makeRequest();
 
