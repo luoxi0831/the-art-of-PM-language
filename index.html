@@ -305,7 +305,6 @@
       <div class="result-text" id="resultText"></div>
       <div class="result-actions">
         <button class="action-btn primary" id="copyBtn">复制到输入框</button>
-        <button class="action-btn" id="replaceBtn">替换原始内容</button>
         <button class="action-btn" id="repolishBtn">重新润色</button>
       </div>
     </div>
@@ -471,13 +470,6 @@
         document.body.removeChild(ta);
         showToast('已复制，粘贴到输入框即可发送');
       });
-    });
-
-    // 替换原始内容
-    document.getElementById('replaceBtn').addEventListener('click', () => {
-      const result = document.getElementById('resultText').textContent;
-      document.getElementById('inputText').value = result;
-      showToast('已替换输入内容');
     });
 
     // 重新润色
