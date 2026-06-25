@@ -304,7 +304,7 @@
       </div>
       <div class="result-text" id="resultText"></div>
       <div class="result-actions">
-        <button class="action-btn primary" id="copyBtn">复制到输入框</button>
+        <button class="action-btn primary" id="copyBtn">一键复制</button>
         <button class="action-btn" id="repolishBtn">重新润色</button>
       </div>
     </div>
@@ -460,7 +460,7 @@
     document.getElementById('copyBtn').addEventListener('click', () => {
       const text = document.getElementById('resultText').textContent;
       navigator.clipboard.writeText(text).then(() => {
-        showToast('已复制，粘贴到输入框即可发送');
+        showToast('已复制');
       }).catch(() => {
         const ta = document.createElement('textarea');
         ta.value = text;
@@ -468,7 +468,7 @@
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        showToast('已复制，粘贴到输入框即可发送');
+        showToast('已复制');
       });
     });
 
