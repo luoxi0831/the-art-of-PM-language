@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>工作语言润色器</title>
+  <script type="text/javascript" src="https://lf-cdn.bytescm.com/obj/static/jssdk/js_sdk/lark-js-sdk-1.5.16.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -228,25 +229,6 @@
       background: #2860e1;
     }
 
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #8f959e;
-      font-size: 14px;
-    }
-
-    .loading::after {
-      content: '';
-      animation: dots 1.5s steps(3, end) infinite;
-    }
-
-    @keyframes dots {
-      0% { content: ''; }
-      33% { content: '.'; }
-      66% { content: '..'; }
-      100% { content: '...'; }
-    }
-
     .toast {
       position: fixed;
       top: 20px;
@@ -320,6 +302,7 @@
       <div class="result-text" id="resultText"></div>
       <div class="result-actions">
         <button class="action-btn primary" id="copyBtn">复制结果</button>
+        <button class="action-btn primary" id="sendBtn" style="display:none">发送到会话</button>
         <button class="action-btn" id="replaceBtn">替换输入</button>
         <button class="action-btn" id="repolishBtn">重新润色</button>
       </div>
@@ -332,16 +315,40 @@
     const AI_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
     const AI_KEY = '70fcf4d493464c86a4426323b9fd9c39.vuTEEqoUXobAtBUs';
     const AI_MODEL = 'glm-4.7-flash';
+    const FEISHU_APP_ID = 'cli_aab24dc745b99bb5';
     let selectedTone = '';
+    let triggerCode = '';
+    let isInFeishu = false;
 
     const toneMap = {
-      'leader': '对领导说（语气恭敬、专业、简洁，体现尊重和汇报感）',
-      'colleague': '对同事说（语气友好、平等、协作感强）',
-      'business': '对业务方说（语气专业、耐心、有服务意识，避免技术术语）',
-      'developer': '对开发说（语气清晰、精确、有条理，可以使用技术术语）',
-      'tester': '对测试说（语气清晰、详细、注重逻辑和边界条件说明）',
-      'direct': '直白地说（去掉所有客套话，直接表达核心意思）'
+      'leader': '对领导说（恭敬专业简洁）',
+      'colleague': '对同事说（友好平等协作）',
+      'business': '对业务方说（耐心有服务意识，不讲技术）',
+      'developer': '对开发说（清晰精确有条理，可用技术术语）',
+      'tester': '对测试说（详细注重逻辑和边界）',
+      'direct': '直白地说（去掉客套直击要点）'
     };
+
+    // 飞书环境检测和初始化
+    (function initFeishu() {
+      if (!window.h5sdk) return;
+      isInFeishu = true;
+
+      // 获取 triggerCode（从"+"菜单打开时）
+      const params = new URLSearchParams(location.search);
+      const launchQuery = params.get('bdp_launch_query');
+      if (launchQuery) {
+        try {
+          const parsed = JSON.parse(launchQuery);
+          triggerCode = parsed.__trigger_id__ || '';
+        } catch(e) {}
+      }
+
+      // 如果有 triggerCode，显示"发送到会话"按钮
+      if (triggerCode) {
+        document.getElementById('sendBtn').style.display = '';
+      }
+    })();
 
     // 语境选择
     document.querySelectorAll('.tone-btn').forEach(btn => {
@@ -353,7 +360,6 @@
       });
     });
 
-    // 输入监听
     document.getElementById('inputText').addEventListener('input', updatePolishBtn);
 
     function updatePolishBtn() {
@@ -361,7 +367,7 @@
       document.getElementById('polishBtn').disabled = !(text && selectedTone);
     }
 
-    // 润色
+    // 润色（带自动重试）
     document.getElementById('polishBtn').addEventListener('click', doPolish);
 
     async function doPolish() {
@@ -376,88 +382,88 @@
 
       btn.disabled = true;
       btn.textContent = '润色中...';
-      resultText.textContent = '';
       resultText.innerHTML = '<span class="loading-text">正在思考措辞中</span>';
       resultSection.classList.add('show');
 
       const toneDesc = toneMap[selectedTone] || toneMap['colleague'];
-      let prompt = `你是一位资深互联网产品经理的写作助手。请将以下内容润色成适合"${toneDesc}"的表达方式。
-
-要求：
-1. 保持原意不变
-2. 符合职场语境
-3. 自然流畅，不要过度修饰
-4. 直接输出润色后的结果，不要解释
-5. 只输出润色后要发出去的话，不要输出分析过程`;
+      let prompt = `将以下内容润色为"${toneDesc}"的语气。保持原意，直接输出结果，不解释。`;
 
       if (extraNote) {
-        prompt += `\n\n背景信息（用户提供的前因后果，帮助你理解语境，但不要在润色结果中直接暴露这些内容）：\n${extraNote}`;
+        prompt += `\n背景（不要在结果中暴露）：${extraNote}`;
       }
 
-      try {
-        const res = await fetch(AI_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${AI_KEY}`
-          },
-          body: JSON.stringify({
-            model: AI_MODEL,
-            stream: true,
-            messages: [
-              { role: 'system', content: prompt },
-              { role: 'user', content: text }
-            ]
-          })
-        });
+      let success = false;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch(AI_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${AI_KEY}`
+            },
+            body: JSON.stringify({
+              model: AI_MODEL,
+              stream: true,
+              messages: [
+                { role: 'system', content: prompt },
+                { role: 'user', content: text }
+              ]
+            })
+          });
 
-        if (!res.ok) {
-          showToast('润色失败，请重试');
-          resultSection.classList.remove('show');
-          btn.disabled = false;
-          btn.textContent = '开始润色';
-          return;
-        }
+          if (!res.ok) {
+            if (attempt < 2) { await sleep(500); continue; }
+            showToast('润色失败，请重试');
+            resultSection.classList.remove('show');
+            break;
+          }
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let firstChunk = true;
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let firstChunk = true;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') break;
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content;
-                if (content) {
-                  if (firstChunk) {
-                    resultText.innerHTML = '';
-                    resultText.textContent = '';
-                    firstChunk = false;
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') break;
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  if (content) {
+                    if (firstChunk) {
+                      resultText.innerHTML = '';
+                      resultText.textContent = '';
+                      firstChunk = false;
+                    }
+                    resultText.textContent += content;
                   }
-                  resultText.textContent += content;
-                }
-              } catch (e) {}
+                } catch (e) {}
+              }
             }
           }
+          success = true;
+          break;
+        } catch (err) {
+          if (attempt < 2) { await sleep(500); continue; }
+          showToast('网络错误，请重试');
+          resultSection.classList.remove('show');
         }
-      } catch (err) {
-        showToast('网络错误，请重试');
       }
 
       btn.disabled = false;
       btn.textContent = '开始润色';
     }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     // 复制
     document.getElementById('copyBtn').addEventListener('click', () => {
@@ -465,7 +471,6 @@
       navigator.clipboard.writeText(text).then(() => {
         showToast('已复制到剪贴板');
       }).catch(() => {
-        // fallback
         const ta = document.createElement('textarea');
         ta.value = text;
         document.body.appendChild(ta);
@@ -473,6 +478,29 @@
         document.execCommand('copy');
         document.body.removeChild(ta);
         showToast('已复制到剪贴板');
+      });
+    });
+
+    // 发送到飞书会话
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      const text = document.getElementById('resultText').textContent;
+      if (!text || !triggerCode || !window.tt) {
+        showToast('无法发送，请复制后手动粘贴');
+        return;
+      }
+      tt.sendMessageCard({
+        triggerCode: triggerCode,
+        cardContent: {
+          update_multi: false,
+          card: {
+            elements: [{
+              tag: 'div',
+              text: { tag: 'plain_text', content: text }
+            }]
+          }
+        },
+        success() { showToast('已发送到会话'); },
+        fail() { showToast('发送失败，请复制后手动粘贴'); }
       });
     });
 
@@ -494,14 +522,8 @@
       setTimeout(() => toast.classList.remove('show'), 2000);
     }
 
-    // 从飞书获取选中的消息文本
-    function getQueryParam(name) {
-      const params = new URLSearchParams(window.location.search);
-      return params.get(name);
-    }
-
-    // 如果通过飞书消息快捷操作打开，预填文本
-    const preText = getQueryParam('text');
+    // 从URL预填文本（飞书消息快捷操作）
+    const preText = new URLSearchParams(location.search).get('text');
     if (preText) {
       document.getElementById('inputText').value = decodeURIComponent(preText);
       updatePolishBtn();
