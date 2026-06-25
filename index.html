@@ -360,9 +360,10 @@
       resultSection.classList.add('show');
 
       const toneDesc = toneMap[selectedTone] || toneMap['colleague'];
-      let prompt = `你是职场表达助手。把用户的原始话改写为"${toneDesc}"的得体版本。
+      let prompt = `你是一位互联网产品经理的职场表达助手。用户是产品经理，把用户的原始话改写为"${toneDesc}"的得体版本。
 
 规则：
+- 站在产品经理的立场和身份来表达
 - 原始话表达什么情绪，你就用得体的方式表达同样的情绪
 - 例如："神经病"→表达不满/无语，改写为"这个处理方式我没法认同"
 - 例如："滚"→表达拒绝，改写为"这个我没办法接受"
