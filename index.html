@@ -265,6 +265,23 @@
     .toast.show {
       opacity: 1;
     }
+
+    .loading-text {
+      color: #8f959e;
+      font-size: 13px;
+    }
+
+    .loading-text::after {
+      content: '';
+      animation: loading-dots 1.5s infinite;
+    }
+
+    @keyframes loading-dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
   </style>
 </head>
 <body>
@@ -360,7 +377,8 @@
       btn.disabled = true;
       btn.textContent = '润色中...';
       resultText.textContent = '';
-      resultSection.classList.remove('show');
+      resultText.innerHTML = '<span class="loading-text">正在思考措辞中</span>';
+      resultSection.classList.add('show');
 
       const toneDesc = toneMap[selectedTone] || toneMap['colleague'];
       let prompt = `你是一位资深互联网产品经理的写作助手。请将以下内容润色成适合"${toneDesc}"的表达方式。
@@ -395,12 +413,14 @@
 
         if (!res.ok) {
           showToast('润色失败，请重试');
+          resultSection.classList.remove('show');
           btn.disabled = false;
           btn.textContent = '开始润色';
           return;
         }
 
-        resultSection.classList.add('show');
+        resultText.innerHTML = '';
+        resultText.textContent = '';
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
