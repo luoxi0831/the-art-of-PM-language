@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const AI_URL = process.env.AI_URL || 'https://open.bigmodel.cn/api/paas/v4';
 const AI_KEY = process.env.AI_KEY || '70fcf4d493464c86a4426323b9fd9c39.vuTEEqoUXobAtBUs';
-const AI_MODEL = process.env.AI_MODEL || 'GLM-4.7-Flash';
+const AI_MODEL = process.env.AI_MODEL || 'glm-4.7-flash';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
