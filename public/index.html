@@ -291,6 +291,9 @@
       <div class="extra-note">
         <textarea id="extraNote" rows="2" placeholder="背景吐槽（可选）：说说前因后果，比如"他已经改了3次需求了，每次都是临上线才说"，AI会结合背景帮你润色得更到位"></textarea>
       </div>
+      <div class="extra-note">
+        <textarea id="polishReq" rows="1" placeholder="润色要求（可选）：如"委婉一些"、"带点讽刺"、"要显得专业""></textarea>
+      </div>
     </div>
 
     <button class="polish-btn" id="polishBtn" disabled>开始润色</button>
@@ -386,10 +389,23 @@
       resultSection.classList.add('show');
 
       const toneDesc = toneMap[selectedTone] || toneMap['colleague'];
-      let prompt = `将以下内容润色为"${toneDesc}"的语气。保持原意，直接输出结果，不解释。`;
+      let prompt = `你是职场表达助手。把用户的原始话改写为"${toneDesc}"的得体版本。
+
+规则：
+- 原始话表达什么情绪，你就用得体的方式表达同样的情绪
+- 例如："神经病"→表达不满/无语，改写为"这个处理方式我没法认同"
+- 例如："滚"→表达拒绝，改写为"这个我没办法接受"
+- 保持简短精炼，一两句话即可
+- 可以体现背景相关的方向，但不要做细节补充和展开
+- 直接输出结果`;
 
       if (extraNote) {
-        prompt += `\n背景（不要在结果中暴露）：${extraNote}`;
+        prompt += `\n\n[以下背景仅帮你理解情绪指向，可体现方向但禁止补充细节]：${extraNote}`;
+      }
+
+      const polishReq = document.getElementById('polishReq').value.trim();
+      if (polishReq) {
+        prompt += `\n\n[用户对润色的额外要求]：${polishReq}`;
       }
 
       let success = false;
