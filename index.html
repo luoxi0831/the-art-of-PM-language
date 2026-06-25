@@ -304,9 +304,8 @@
       </div>
       <div class="result-text" id="resultText"></div>
       <div class="result-actions">
-        <button class="action-btn primary" id="copyBtn">复制结果</button>
-        <button class="action-btn primary" id="sendBtn" style="display:none">发送到会话</button>
-        <button class="action-btn" id="replaceBtn">替换输入</button>
+        <button class="action-btn primary" id="copyBtn">复制到输入框</button>
+        <button class="action-btn" id="replaceBtn">替换原始内容</button>
         <button class="action-btn" id="repolishBtn">重新润色</button>
       </div>
     </div>
@@ -320,8 +319,6 @@
     const AI_MODEL = 'glm-4.7-flash';
     const FEISHU_APP_ID = 'cli_aab24dc745b99bb5';
     let selectedTone = '';
-    let triggerCode = '';
-    let isInFeishu = false;
 
     const toneMap = {
       'leader': '对领导说（恭敬专业简洁）',
@@ -331,27 +328,6 @@
       'tester': '对测试说（详细注重逻辑和边界）',
       'direct': '直白地说（去掉客套直击要点）'
     };
-
-    // 飞书环境检测和初始化
-    (function initFeishu() {
-      if (!window.h5sdk) return;
-      isInFeishu = true;
-
-      // 获取 triggerCode（从"+"菜单打开时）
-      const params = new URLSearchParams(location.search);
-      const launchQuery = params.get('bdp_launch_query');
-      if (launchQuery) {
-        try {
-          const parsed = JSON.parse(launchQuery);
-          triggerCode = parsed.__trigger_id__ || '';
-        } catch(e) {}
-      }
-
-      // 如果有 triggerCode，显示"发送到会话"按钮
-      if (triggerCode) {
-        document.getElementById('sendBtn').style.display = '';
-      }
-    })();
 
     // 语境选择
     document.querySelectorAll('.tone-btn').forEach(btn => {
@@ -485,7 +461,7 @@
     document.getElementById('copyBtn').addEventListener('click', () => {
       const text = document.getElementById('resultText').textContent;
       navigator.clipboard.writeText(text).then(() => {
-        showToast('已复制到剪贴板');
+        showToast('已复制，粘贴到输入框即可发送');
       }).catch(() => {
         const ta = document.createElement('textarea');
         ta.value = text;
@@ -493,34 +469,11 @@
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        showToast('已复制到剪贴板');
+        showToast('已复制，粘贴到输入框即可发送');
       });
     });
 
-    // 发送到飞书会话
-    document.getElementById('sendBtn').addEventListener('click', () => {
-      const text = document.getElementById('resultText').textContent;
-      if (!text || !triggerCode || !window.tt) {
-        showToast('无法发送，请复制后手动粘贴');
-        return;
-      }
-      tt.sendMessageCard({
-        triggerCode: triggerCode,
-        cardContent: {
-          update_multi: false,
-          card: {
-            elements: [{
-              tag: 'div',
-              text: { tag: 'plain_text', content: text }
-            }]
-          }
-        },
-        success() { showToast('已发送到会话'); },
-        fail() { showToast('发送失败，请复制后手动粘贴'); }
-      });
-    });
-
-    // 替换输入
+    // 替换原始内容
     document.getElementById('replaceBtn').addEventListener('click', () => {
       const result = document.getElementById('resultText').textContent;
       document.getElementById('inputText').value = result;
