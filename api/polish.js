@@ -1,3 +1,5 @@
+const https = require('https');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -11,7 +13,6 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const AI_URL = process.env.AI_URL || 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
   const AI_KEY = process.env.AI_KEY;
   const AI_MODEL = process.env.AI_MODEL || 'glm-4.7-flash';
 
@@ -19,33 +20,50 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'AI_KEY not configured' });
   }
 
-  try {
-    const { messages } = req.body;
+  const { messages } = req.body;
 
-    if (!messages || !messages.length) {
-      return res.status(400).json({ error: 'Missing messages' });
+  if (!messages || !messages.length) {
+    return res.status(400).json({ error: 'Missing messages' });
+  }
+
+  const postData = JSON.stringify({
+    model: AI_MODEL,
+    stream: false,
+    messages: messages
+  });
+
+  const options = {
+    hostname: 'open.bigmodel.cn',
+    path: '/api/paas/v4/chat/completions',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${AI_KEY}`,
+      'Content-Length': Buffer.byteLength(postData)
     }
+  };
 
-    const response = await fetch(`${AI_URL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${AI_KEY}`
-      },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        stream: false,
-        messages: messages
-      })
+  try {
+    const data = await new Promise((resolve, reject) => {
+      const request = https.request(options, (response) => {
+        let body = '';
+        response.on('data', chunk => body += chunk);
+        response.on('end', () => {
+          if (response.statusCode !== 200) {
+            reject({ status: response.statusCode, body });
+          } else {
+            resolve(JSON.parse(body));
+          }
+        });
+      });
+      request.on('error', reject);
+      request.write(postData);
+      request.end();
     });
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: 'AI request failed', status: response.status });
-    }
-
-    const data = await response.json();
     return res.status(200).json(data);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    const status = err.status || 500;
+    return res.status(status).json({ error: 'AI request failed', status });
   }
 };
