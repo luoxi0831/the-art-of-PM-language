@@ -46,7 +46,14 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/polish') {
     const body = await parseBody(req);
     req.body = body;
-    return polishHandler(req, createRes(res));
+    const fakeRes = {
+      setHeader(k, v) { res.setHeader(k, v); },
+      status(code) { res.statusCode = code; return this; },
+      json(data) { res.writeHead(res.statusCode || 200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(data)); },
+      write(chunk) { res.write(chunk); },
+      end() { res.end(); }
+    };
+    return polishHandler(req, fakeRes);
   }
 
   if (url.pathname === '/api/feishu-event') {
