@@ -1,0 +1,258 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  background: #f5f6f8;
+  color: #1f2329;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.header p {
+  font-size: 12px;
+  color: #8f959e;
+  margin-top: 4px;
+}
+
+.input-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.input-section label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #646a73;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.input-textarea {
+  width: 100%;
+  min-height: 100px;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-textarea:focus {
+  border-color: #3370ff;
+}
+
+.tone-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.tone-section label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #646a73;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.tone-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.tone-btn {
+  padding: 10px 8px;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  color: #1f2329;
+}
+
+.tone-btn:hover {
+  border-color: #3370ff;
+  color: #3370ff;
+}
+
+.tone-btn.active {
+  background: #e1ecff;
+  border-color: #3370ff;
+  color: #3370ff;
+  font-weight: 500;
+}
+
+.extra-note {
+  margin-top: 12px;
+}
+
+.extra-note textarea {
+  width: 100%;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.extra-note textarea:focus {
+  border-color: #3370ff;
+}
+
+.polish-btn {
+  width: 100%;
+  padding: 14px;
+  background: #3370ff;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.2s;
+}
+
+.polish-btn:hover {
+  background: #2860e1;
+}
+
+.polish-btn:disabled {
+  background: #bfcfff;
+  cursor: not-allowed;
+}
+
+.result-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  display: none;
+}
+
+.result-section.show {
+  display: block;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.result-header span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #646a73;
+}
+
+.result-text {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #1f2329;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.result-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid #e5e6eb;
+  background: #fff;
+  color: #1f2329;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  border-color: #3370ff;
+  color: #3370ff;
+}
+
+.action-btn.primary {
+  background: #3370ff;
+  color: #fff;
+  border-color: #3370ff;
+}
+
+.action-btn.primary:hover {
+  background: #2860e1;
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2329;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.toast.show {
+  opacity: 1;
+}
+
+.loading-text {
+  color: #8f959e;
+  font-size: 13px;
+}
+
+.loading-text::after {
+  content: '';
+  animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
